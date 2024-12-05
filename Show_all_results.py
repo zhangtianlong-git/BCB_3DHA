@@ -96,7 +96,7 @@ def get_final_alignment_info(alignment_info):
 
 
 """--------------------------------Input manual alignment and program-optimized alignment----------------------------------"""
-mannual_alignment = load_dict('Mannual/Mannual_alignment.json')
+manual_alignment = load_dict('Manual/Manual_alignment.json')
 
 als_1 = load_dict('Optimized_alignments-300.json')
 als_2 = load_dict('Optimized_alignments-450.json')
@@ -109,7 +109,7 @@ indexs = range(len(als_dics))
 for als_set, id in zip(als_dics, indexs):
     for key in als_set:
         code_alignments[int(key)+id*100] = als_set[key]
-m_a_info = mannual_alignment['0']
+m_a_info = manual_alignment['0']
 
 """------------------------Calculate the coordinates before station access based on the manual alignment---------------------------"""
 ini_len, index = 3950 - 1520, int((3950 - 1520)/30)
