@@ -2,3 +2,4 @@ venv/
 Optimized_*.json
 h_*.json
 __pycache__
+test*.py

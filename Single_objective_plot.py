@@ -19,65 +19,6 @@ def plot_alignments(alignment_info, fig_aligns, colors):
     plt.figure(fig_aligns.number)
     plt.axis('equal'), plt.plot(xs, ys, color=colors, linestyle='-')
 
-def get_final_alignment_info(alignment_info):
-    print("--------------The recalculated results for important parameters such as route cost are as follows-------------------")
-    [xs, ys, zs, ts, ss] = alignment_info
-    h_diffs = np.array(zs) - np.array(ts)
-    """Recalculation of tunnel and bridge lengths"""
-    types = np.array(len(h_diffs)*['S'])
-    types[h_diffs > 8] = 'B'
-    types[h_diffs < -15] = 'T'
-    counts, last_type = {'S':[], 'B':[], 'T':[]}, None
-    for t in types:
-        if last_type == t:
-            counts[t][-1] += 1
-        else:
-            counts[t] += [1]
-        last_type = t
-    tunnuls, bridges = np.array(counts['T']), np.array(counts['B'])
-    # Note that only counts greater than 1 are output here, but all counts are considered in the cost calculation.
-    tunnuls_valid, bridges_valid = tunnuls[tunnuls>1], bridges[bridges>1]  
-    tunnul_num, tunnul_len = len(tunnuls_valid), sum(tunnuls_valid)*30
-    bri_num, bri_len = len(bridges_valid), sum(bridges_valid)*30
-    print('Tunnel number:{}，Length:{}, Bridge number:{}，Length:{}'.format(tunnul_num, tunnul_len, bri_num, bri_len))
-    """Recalculation of land area"""
-    h_diffs_Sub_and_Bri = h_diffs[h_diffs>=-15]
-    h_diffs_Sub = h_diffs_Sub_and_Bri[h_diffs_Sub_and_Bri<=8]
-    right_of_way_area = (sum(abs(h_diffs_Sub)*1.75*2)+len(h_diffs_Sub_and_Bri)*(24+10))*30
-    print('Land area：', right_of_way_area)
-    """Recalculation of alignment cost (excluding house demolition)"""
-    output = get_cost_and_tunnel_info(h_diffs[:-30*2], 'S', 0, 0, 0)
-    [t_cost, t_carbon, _, _, _, _, t_earthwork, t_water] = output
-    print('Alignment length:{}，cost:{}，carbon:{}，earthwork:{}，water:{}'.format(ss[-1], t_cost, t_carbon, t_earthwork, t_water))
-    """Recalculation of route cost (including house demolition)"""
-    iter, house_list, old_house_set, t_house = 0, [], set(), 0
-    for tx, ty, hd in zip(xs, ys, h_diffs):
-        if iter % 20 == 0:  # Groups of twenty points, approximately corresponding to the process in the exploration phase, do not affect the final calculation results
-            old_house_set = set(house_list) - old_house_set
-            t_house += sum(old_house_set)
-            house_list = []
-        if hd > -15:
-            house_list += house_info_dict.get((int(tx*6), int(ty*6)), [])
-        iter += 1
-    old_house_set = set(house_list) - old_house_set
-    t_house += sum(old_house_set)
-    print("Demolition area (considering tunnels) is", t_house)
-    iter, house_list, old_house_set, _t_house = 0, [], set(), 0
-    for tx, ty, hd in zip(xs, ys, h_diffs):
-        if iter % 20 == 0:  # Groups of twenty points, approximately corresponding to the process in the exploration phase, do not affect the final calculation results
-            old_house_set = set(house_list) - old_house_set
-            _t_house += sum(old_house_set)
-            house_list = []
-        house_list += house_info_dict.get((int(tx*6), int(ty*6)), [])
-        iter += 1
-    old_house_set = set(house_list) - old_house_set
-    _t_house += sum(old_house_set)
-    print("Demolition area (excluding tunnels) is", _t_house)
-    house_cost, house_carbon = house_unit_cost*t_house, house_unit_carbon*t_house
-    t_cost, t_carbon = t_cost + house_cost, t_carbon + house_carbon
-    print('The final total cost considering the houses:{}，total carbon:{}'.format(t_cost, t_carbon))
-    return t_cost, t_carbon
-
 
 """--------------------------------Input manual alignment and program-optimized alignment----------------------------------"""
 manual_alignment = load_dict('Manual/Manual_alignment.json')
@@ -107,7 +48,7 @@ for i in range(len(m_bpd_ss)):
 
 
 """--------------------------------Program-optimized alignment calculations----------------------------------"""
-fig_aligns, fig_para = plt.figure(figsize=(10, 6)), plt.figure()
+fig_aligns= plt.figure(figsize=(10, 6))
 plt.rcParams.update({'font.size': 15, 'font.family': 'Times New Roman'})
 alignments_updated = {}
 marks = ['^g', '^r', '^y', '^k', '^b']
@@ -120,9 +61,7 @@ for key in code_alignments:
     t_pi_x[0], t_pi_y[0] = ini_xs[0], ini_ys[0]
     alignments_updated[key] = [t_xs, t_ys, t_zs, t_ts, t_ss, t_bpd_ss, t_bpd_zs, t_pi_x, t_pi_y, t_pi_r]
     print('------------ID of the current alignment is {}--------------'.format(key))
-    t_cost, t_carbon = get_final_alignment_info([t_xs, t_ys, t_zs, t_ts, t_ss])
     plot_alignments([t_xs, t_ys], fig_aligns, colors=np.random.rand(3,))
-    plt.figure(fig_para.number), plt.plot(t_cost, t_carbon, marks[int(key/100)])
 
 plt.show()
 
